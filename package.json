@@ -40,8 +40,9 @@
   },
   "scripts": {
     "build": "cross-env NODE_ENV=production eslint src && babel src --out-dir lib --source-maps inline",
-    "clean": "rimraf lib/ & rimraf coverage/ & rimraf .nyc_output/",
+    "clean": "rimraf lib/ & rimraf coverage/",
     "test": "cross-env NODE_ENV=test eslint src && jest --coverage",
-    "test:watch": "cross-env NODE_ENV=test jest --watch"
+    "watch": "cross-env NODE_ENV=test jest --watch",
+    "release": "npm run test && npm run clean && npm run build && npm publish"
   }
 }
