@@ -27,13 +27,6 @@ describe('TimerQueue', function () {
     })
   })
   describe('コンストラクタのオプション', function () {
-    it('なにも指定しない場合', function () {
-      const tqueue = new TimerQueue()
-
-      expect(tqueue.timeout).toBe(0)
-      expect(tqueue.interval).toBe(0)
-      expect(tqueue.autoStart).toBe(false)
-    })
     it('すべて指定した場合', function () {
       const timeout = 1000
       const interval = 1000
@@ -89,212 +82,138 @@ describe('TimerQueue', function () {
       expect(tqueue.queue[0].delay).toBe(0)
     })
     it('第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)だった場合', function (done) {
-      expect.assertions(3)
       const func = jest.fn()
-      let count = 0
-      const func1 = () => {
-        sleep(2000).then(() => {
-          count++ // 実行される前に終了する
-        })
-        return false // falseを返却しても動作は変更されない
-      }
-      const func2 = () => {
-        expect(count++).toBe(0)
-        return func // functionを返却しても実行されない
-      }
-      const func3 = () => {
-        expect(count++).toBe(1)
-      }
+      const func1 = jest.fn(() => { sleep(30).then(func) })
+      const func2 = jest.fn()
+      const func3 = jest.fn()
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.once('end', () => {
         expect(func).not.toHaveBeenCalled()
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = (done) => {
-        sleep(10).then(() => {
-          expect(count++).toBe(0)
-          done()
-        })
-      }
-      const func2 = (done) => {
-        expect(count++).toBe(1)
-        done()
-      }
-      const func3 = (done) => {
-        expect(count++).toBe(2)
-        done()
-      }
+      const func1 = jest.fn(done => { sleep(10).then(done) })
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn(done => done())
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        return sleep(10).then(() => {
-          expect(count++).toBe(0)
-        })
-      }
-      const func2 = () => {
-        return new Promise((resolve) => {
-          expect(count++).toBe(1)
-          resolve()
-        })
-      }
-      const func3 = () => {
-        return Promise.resolve().then(() => {
-          expect(count++).toBe(2)
-        })
-      }
+      const func1 = jest.fn().mockReturnValue(sleep(10))
+      const func2 = jest.fn().mockReturnValue(new Promise((resolve) => { resolve() }))
+      const func3 = jest.fn().mockReturnValue(Promise.resolve())
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第一引数のfunctionが同期実装と非同期実装混ぜて実行した場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        sleep(10).then(() => {
-          expect(count++).toBe(1)
-        })
-      }
-      const func2 = (done) => {
-        expect(count++).toBe(0)
-        done()
-      }
-      const func3 = () => {
-        return sleep(20).then(() => {
-          expect(count++).toBe(2)
-        })
-      }
+      const func1 = jest.fn()
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn().mockReturnValue(sleep(20))
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
 
     it('第二引数のdelayを指定、第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)だった場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        sleep(10).then(() => {
-          expect(count++).toBe(0)
-        })
-      }
-      const func2 = () => {
-        expect(count++).toBe(1)
-      }
-      const func3 = () => {
-        expect(count++).toBe(2)
-      }
+      const func = jest.fn()
+      const func1 = jest.fn(() => { sleep(10).then(func) })
+      const func2 = jest.fn()
+      const func3 = jest.fn()
+
       const tqueue = new TimerQueue()
       tqueue.push(func1, 20)
       tqueue.push(func2, 20)
       tqueue.push(func3, 20)
       tqueue.once('end', () => {
+        expect(func).toHaveBeenCalled()
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = (done) => {
-        sleep(10).then(() => {
-          expect(count++).toBe(0)
-          done()
-        })
-      }
-      const func2 = (done) => {
-        expect(count++).toBe(1)
-        done()
-      }
-      const func3 = (done) => {
-        expect(count++).toBe(2)
-        done()
-      }
+      const func1 = jest.fn(done => { sleep(10).then(done) })
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn(done => done())
+
       const tqueue = new TimerQueue()
       tqueue.push(func1, 20)
       tqueue.push(func2, 20)
       tqueue.push(func3, 20)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        return sleep(10).then(() => {
-          expect(count++).toBe(0)
-        })
-      }
-      const func2 = () => {
-        return new Promise((resolve) => {
-          expect(count++).toBe(1)
-          resolve()
-        })
-      }
-      const func3 = () => {
-        return Promise.resolve().then(() => {
-          expect(count++).toBe(2)
-        })
-      }
+      const func1 = jest.fn().mockReturnValue(sleep(10))
+      const func2 = jest.fn().mockReturnValue(new Promise((resolve) => { resolve() }))
+      const func3 = jest.fn().mockReturnValue(Promise.resolve())
+
       const tqueue = new TimerQueue()
       tqueue.push(func1, 20)
       tqueue.push(func2, 20)
       tqueue.push(func3, 20)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('第二引数のdelayを指定、第一引数のfunctionが同期実装と非同期実装混ぜて実行した場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        sleep(10).then(() => {
-          expect(count++).toBe(0)
-        })
-      }
-      const func2 = (done) => {
-        expect(count++).toBe(1)
-        done()
-      }
-      const func3 = () => {
-        return sleep(20).then(() => {
-          expect(count++).toBe(2)
-        })
-      }
+      const func1 = jest.fn()
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn().mockReturnValue(sleep(20))
+
       const tqueue = new TimerQueue()
-      tqueue.push(func1, 20)
+      tqueue.push(() => { sleep(10).then(func1) }, 20)
       tqueue.push(func2, 20)
       tqueue.push(func3, 20)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
@@ -330,29 +249,21 @@ describe('TimerQueue', function () {
     })
     it('Queueが空の場合', function (done) {
       const tqueue = new TimerQueue()
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.start()
     })
     it('すでにstart済みの場合', function (done) {
-      expect.assertions(3)
-      let count = 0
-      const func1 = () => {
-        expect(count++).toBe(0)
-        tqueue.start() // なにも処理されない
-      }
-      const func2 = () => {
-        expect(count++).toBe(1)
-      }
-      const func3 = () => {
-        expect(count++).toBe(2)
-      }
+      const func1 = jest.fn(() => { tqueue.start() /* なにも処理されない */ })
+      const func2 = jest.fn()
+      const func3 = jest.fn()
       const tqueue = new TimerQueue()
       tqueue.push(func1, 20)
       tqueue.push(func2, 20)
       tqueue.push(func3, 20)
       tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
         done()
       })
       tqueue.start()
@@ -360,57 +271,48 @@ describe('TimerQueue', function () {
   })
   describe('.stop()', function () {
     it('Queueが空の場合', function (done) {
-      let count = 0
+      const end = jest.fn() // 実行されない
       const tqueue = new TimerQueue()
-      tqueue.once('end', () => {
-        count++ // 実行されない
-      })
+      tqueue.once('end', end)
       tqueue.stop()
       sleep(10).then(() => {
-        expect(count++).toBe(0)
+        expect(end).not.toHaveBeenCalled()
         done()
       })
     })
     it('未startの場合', function (done) {
-      let count = 0
       const func = jest.fn()
+      const end = jest.fn() // 実行されない
       const tqueue = new TimerQueue()
       tqueue.push(func)
-      tqueue.once('end', () => {
-        count++ // 実行されない
-      })
+      tqueue.once('end', end)
 
       tqueue.stop()
       sleep(10).then(() => {
-        expect(count++).toBe(0)
+        expect(func).not.toHaveBeenCalled()
+        expect(end).not.toHaveBeenCalled()
         done()
       })
     })
     it('start済みの場合', function (done) {
-      let count = 0
-      const func1 = () => {
-        count++
-      }
-      const func2 = () => {
-        count++
-        tqueue.stop()
-      }
-      const func3 = () => {
-        count++
-      }
-      const func4 = () => {
-        count++
-      }
+      const func1 = jest.fn()
+      const func2 = jest.fn(() => { tqueue.stop() })
+      const func3 = jest.fn()
+      const func4 = jest.fn()
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.push(func4)
       tqueue.once('end', () => {
-        expect(count++).toBe(2)
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).not.toHaveBeenCalled()
+        expect(func4).not.toHaveBeenCalled()
 
         tqueue.once('end', () => {
-          expect(count++).toBe(5)
+          expect(func3).toHaveBeenCalled()
+          expect(func4).toHaveBeenCalled()
           done()
         })
         tqueue.start()
@@ -423,34 +325,25 @@ describe('TimerQueue', function () {
       const func = jest.fn()
       const tqueue = new TimerQueue()
       tqueue.push(func)
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.clear()
       tqueue.start()
     })
     it('start済みの場合', function (done) {
-      let count = 0
-      const func1 = () => {
-        count++
-      }
-      const func2 = () => {
-        count++
-        tqueue.clear()
-      }
-      const func3 = () => {
-        count++ // 実行されない
-      }
-      const func4 = () => {
-        count++ // 実行されない
-      }
+      const func1 = jest.fn()
+      const func2 = jest.fn(() => { tqueue.clear() })
+      const func3 = jest.fn() // 実行されない
+      const func4 = jest.fn() // 実行されない
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
       tqueue.push(func4)
       tqueue.once('end', () => {
-        expect(count++).toBe(2)
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).not.toHaveBeenCalled()
+        expect(func4).not.toHaveBeenCalled()
         done()
       })
       tqueue.start()
@@ -474,28 +367,26 @@ describe('TimerQueue', function () {
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.start()
     })
     it('.push()の第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
       expect.assertions(3)
       const interval = 100
       const now = Date.now()
-      const func1 = (done) => {
+      const func1 = done => {
         sleep(interval).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(interval)
           done()
         })
       }
-      const func2 = (done) => {
+      const func2 = done => {
         sleep(interval).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(interval * 3)
           done()
         })
       }
-      const func3 = (done) => {
+      const func3 = done => {
         sleep(interval).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(interval * 5)
           done()
@@ -505,9 +396,7 @@ describe('TimerQueue', function () {
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.start()
     })
     it('第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
@@ -533,9 +422,7 @@ describe('TimerQueue', function () {
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.start()
     })
   })
@@ -557,9 +444,7 @@ describe('TimerQueue', function () {
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
-      tqueue.once('end', () => {
-        done()
-      })
+      tqueue.once('end', done)
       tqueue.start()
     })
     it('.push()の第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
@@ -567,20 +452,20 @@ describe('TimerQueue', function () {
       let count = 0
       const timeout = 100
       const now = Date.now()
-      const func1 = (done) => {
+      const func1 = done => {
         sleep(timeout * 2).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 2) // タイムアウト関係なしに実行
           done()
         })
       }
-      const func2 = (done) => {
+      const func2 = done => {
         expect(Date.now() - now).toBeLessThan(timeout * 2) // 前Queueがタイムアウトされて実行
         sleep(timeout * 2).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 3)
           done()
         })
       }
-      const func3 = (done) => {
+      const func3 = done => {
         expect(Date.now() - now).toBeLessThan(timeout * 3) // 前Queueがタイムアウトされて実行
         sleep(timeout * 2).then(() => {
           count++ // 実行されない
