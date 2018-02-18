@@ -19,6 +19,8 @@ Constructor
 - opts `Object` - may contain inital values
 - opts.interval `number` - interval time (ms) for execution. `default: 0`
 - opts.timeout `number` - timeout time (ms) for execution. `default: 0`
+- opts.retry `number` - retry count when execution function failed. `default: 0`
+- opts.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
 - opts.autostart `boolean` - auto start when enqueue by `tqueue.push()`. `default: false`
 
 #### tqueue.start()
@@ -48,26 +50,108 @@ enqueue the function.
 ```js
 import TimerQueue from 'timer-queue'
 
+let count = 0
 const now = Date.now()
-const tqueue = new TimerQueue()
+
+const tqueue = new TimerQueue({
+  interval: 1000,
+  timeout: 10000,
+  retry: 3,
+  retryInterval: 200,
+  autostart: false
+})
 
 tqueue.push(() => {
-  console.log(`first:  ${Date.now() - now}`)
+  const result = count++ > 1
+  console.log(`first: ${Date.now() - now}ms / return ${result}`)
+  return result // return Boolean or not return
 })
-tqueue.push((done) => {
+
+tqueue.push(() => {
+  count = 0 // reset counter
+})
+
+tqueue.push((done, error) => {
+  const result = count++ > 1
   setTimeout(() => {
-    console.log(`second: ${Date.now() - now}`)
-    done() // execute a callback
+    console.log(`second: ${Date.now() - now}ms / ${result ? 'done()' : 'error()'}`)
+    result ? done() : error() // execute a arguments callback
   }, 0)
 })
+
 tqueue.push(() => {
-  const promise = new Promise((resolve) => {
-    console.log(`third: ${Date.now() - now}`)
-    resolve()
+  count = 0 // reset counter
+})
+
+tqueue.push(() => {
+  const result = count++ > 1
+  const promise = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      console.log(`third: ${Date.now() - now}ms / ${result ? 'resolve()' : 'reject()'}`)
+      result ? resolve() : reject(new Error('retry'))
+    }, 0)
   })
   return promise // return a promise
 })
+
+tqueue.on('end', () => {
+  console.log(`end: ${Date.now() - now}ms`)
+})
+tqueue.on('error', () => {
+  console.log(`error: ${Date.now() - now}ms`)
+})
+
 tqueue.start()
+
+// => first: 3ms / return false
+// => first: 212ms / return false
+// => first: 414ms / return true
+// => second: 2421ms / error()
+// => second: 2625ms / error()
+// => second: 2832ms / done()
+// => third: 4841ms / reject()
+// => third: 5046ms / reject()
+// => third: 5250ms / resolve()
+// => end: 5251ms
+```
+
+```js
+import TimerQueue from 'timer-queue'
+
+const now = Date.now()
+
+const tqueue = new TimerQueue({
+  interval: 1000,
+  timeout: 10000,
+  retry: 3,
+  retryInterval: 200,
+  autostart: false
+})
+
+tqueue.push(() => {
+  console.log(`first: ${Date.now() - now}ms / return false`)
+  return false
+})
+
+tqueue.push(() => {
+  console.log(`second: not execute`)
+})
+
+tqueue.on('end', () => {
+  console.log(`end: ${Date.now() - now}ms`)
+})
+tqueue.on('error', () => {
+  console.log(`error: ${Date.now() - now}ms`)
+})
+
+tqueue.start()
+
+
+// => first: 4ms / return false
+// => first: 211ms / return false
+// => first: 419ms / return false
+// => first: 623ms / return false
+// => error: 624ms
 ```
 
 ## Development
