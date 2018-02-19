@@ -1,7 +1,7 @@
 {
   "name": "timer-queue",
   "description": "time-delayed function queue",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Hiroaki Sano <hirosan18>",
   "dependencies": {
     "sleep-promise": "^2.0.0"
