@@ -1,5 +1,8 @@
 # timer-queue
 
+[![npm version](https://badge.fury.io/js/timer-queue.svg)](https://badge.fury.io/js/timer-queue)
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+
 TimerQueue is for controlling the execution timing of function
 
 ## Installation
@@ -12,16 +15,16 @@ npm install timer-queue
 
 ### class TimerQueue
 
-#### var tqueue = new TimerQueue([opts])
+#### var tqueue = new TimerQueue([options])
 
 Constructor
 
-- opts `Object` - may contain inital values
-- opts.interval `number` - interval time (ms) for execution. `default: 0`
-- opts.timeout `number` - timeout time (ms) for execution. `default: 0`
-- opts.retry `number` - retry count when execution function failed. `default: 0`
-- opts.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
-- opts.autostart `boolean` - auto start when enqueue by `tqueue.push()`. `default: false`
+- options `Object` - may contain inital values
+- options.interval `number` - interval time (ms) for execution. `default: 0`
+- options.timeout `number` - timeout time (ms) for execution. `default: 0`
+- options.retry `number` - retry count when execution function failed. `default: 0`
+- options.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
+- options.autostart `boolean` - auto start when enqueue by `tqueue.push()`. `default: false`
 
 #### tqueue.start()
 
@@ -42,8 +45,17 @@ empty the queue.
 enqueue the function.
 
 - fn `function` - execution function
-- delay `function` - delay time (ms) for execution. `defalut: 0`
+- delay `number` - delay time (ms) for execution. `defalut: 0`
 
+#### tqueue.push(fn[, options])
+
+enqueue the function.
+
+- fn `function` - execution function
+- options `Object` - may contain options values
+- options.delay `number` - delay time (ms) for execution. `defalut: 0`
+- options.retry `number` - retry count when execution function failed. `default: 0`
+- options.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
 
 ## Example
 

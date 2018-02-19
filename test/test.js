@@ -153,8 +153,9 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-
-    it('第二引数のdelayを指定、第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)だった場合', function (done) {
+  })
+  describe('.push()の第二引数のdelay指定をNumberで指定した場合の挙動', function () {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)だった場合', function (done) {
       const func = jest.fn()
       const func1 = jest.fn(() => { sleep(10).then(func) })
       const func2 = jest.fn()
@@ -173,7 +174,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
       const func1 = jest.fn(done => { sleep(10).then(done) })
       const func2 = jest.fn(done => done())
       const func3 = jest.fn(done => done())
@@ -190,7 +191,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
       const func1 = jest.fn().mockReturnValue(sleep(10))
       const func2 = jest.fn().mockReturnValue(new Promise((resolve) => { resolve() }))
       const func3 = jest.fn().mockReturnValue(Promise.resolve())
@@ -207,7 +208,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが同期実装と非同期実装混ぜて実行した場合', function (done) {
+    it('.push()の第一引数のfunctionが同期実装と非同期実装混ぜて実行した場合', function (done) {
       const func1 = jest.fn()
       const func2 = jest.fn(done => done())
       const func3 = jest.fn().mockReturnValue(sleep(20))
@@ -225,6 +226,79 @@ describe('TimerQueue', function () {
       tqueue.start()
     })
   })
+  describe('.push()の第二引数のdelay指定をObjectで指定した場合の挙動', function () {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)だった場合', function (done) {
+      const func = jest.fn()
+      const func1 = jest.fn(() => { sleep(10).then(func) })
+      const func2 = jest.fn()
+      const func3 = jest.fn()
+
+      const tqueue = new TimerQueue()
+      tqueue.push(func1, { delay: 20 })
+      tqueue.push(func2, { delay: 20 })
+      tqueue.push(func3, { delay: 20 })
+      tqueue.once('end', () => {
+        expect(func).toHaveBeenCalled()
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
+      const func1 = jest.fn(done => { sleep(10).then(done) })
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn(done => done())
+
+      const tqueue = new TimerQueue()
+      tqueue.push(func1, { delay: 20 })
+      tqueue.push(func2, { delay: 20 })
+      tqueue.push(func3, { delay: 20 })
+      tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
+      const func1 = jest.fn().mockReturnValue(sleep(10))
+      const func2 = jest.fn().mockReturnValue(new Promise((resolve) => { resolve() }))
+      const func3 = jest.fn().mockReturnValue(Promise.resolve())
+
+      const tqueue = new TimerQueue()
+      tqueue.push(func1, { delay: 20 })
+      tqueue.push(func2, { delay: 20 })
+      tqueue.push(func3, { delay: 20 })
+      tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが同期実装と非同期実装混ぜて実行した場合', function (done) {
+      const func1 = jest.fn()
+      const func2 = jest.fn(done => done())
+      const func3 = jest.fn().mockReturnValue(sleep(20))
+
+      const tqueue = new TimerQueue()
+      tqueue.push(() => { sleep(10).then(func1) }, { delay: 20 })
+      tqueue.push(func2, { delay: 20 })
+      tqueue.push(func3, { delay: 20 })
+      tqueue.once('end', () => {
+        expect(func1).toHaveBeenCalled()
+        expect(func2).toHaveBeenCalled()
+        expect(func3).toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+  })
+
   describe('.start()', function () {
     it('autoStart=falseでTimerQueueを生成した場合', function (done) {
       const func = jest.fn()
@@ -405,7 +479,7 @@ describe('TimerQueue', function () {
       tqueue.once('end', done)
       tqueue.start()
     })
-    it('第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
       expect.assertions(3)
       const interval = 100
       const now = Date.now()
@@ -488,7 +562,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
       expect.assertions(5)
       let count = 0
       const timeout = 100
@@ -522,7 +596,7 @@ describe('TimerQueue', function () {
     })
   })
   describe('失敗した場合の挙動', function () {
-    it('第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
       const func1 = jest.fn().mockReturnValue(false)
       const func2 = jest.fn() // 実行されない
       const func3 = jest.fn() // 実行されない
@@ -538,7 +612,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
       const func1 = jest.fn((done, error) => error('call reject'))
       const func2 = jest.fn() // 実行されない
       const func3 = jest.fn() // 実行されない
@@ -554,7 +628,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
       const func1 = jest.fn(() => Promise.reject(new Error('error')))
       const func2 = jest.fn() // 実行されない
       const func3 = jest.fn() // 実行されない
@@ -572,7 +646,7 @@ describe('TimerQueue', function () {
     })
   })
   describe('retryを指定して失敗した場合の挙動', function () {
-    it('第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
       const retry = 3
       const func1 = jest.fn().mockReturnValueOnce(false).mockReturnValue(true) // 二度目で成功
       const func2 = jest.fn().mockReturnValue(false) // 常に失敗
@@ -589,7 +663,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
       const retry = 3
       const func1 = jest.fn((done) => done()).mockImplementationOnce((done, error) => error('call reject')) // 二度目で成功
       const func2 = jest.fn((done, error) => error('call reject')) // 常に失敗
@@ -606,7 +680,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
       const retry = 3
       const func1 = jest.fn(() => Promise.resolve()).mockImplementationOnce(() => Promise.reject(new Error('error'))) // 二度目で成功
       const func2 = jest.fn(() => Promise.reject(new Error('error'))) // 常に失敗
@@ -625,7 +699,7 @@ describe('TimerQueue', function () {
     })
   })
   describe('retry/retryIntervalを指定して失敗した場合の挙動', function () {
-    it('第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
       const retry = 3
       const retryInterval = 500
       const interval = 100
@@ -671,7 +745,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
       const retry = 3
       const retryInterval = 500
       const interval = 100
@@ -717,7 +791,7 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
-    it('第二引数のdelayを指定、第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
       const retry = 3
       const retryInterval = 500
       const interval = 100
@@ -758,6 +832,153 @@ describe('TimerQueue', function () {
       tqueue.once('error', () => {
         expect(func1).toHaveBeenCalledTimes(2)
         expect(func2).toHaveBeenCalledTimes(4) // 3回リトライするので計4回実行される
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+  })
+  describe('retry/retryIntervalを指定を.push()の第二引数で上書きして失敗した場合の挙動', function () {
+    it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {
+      const retry = 3
+      const retryInterval = 500
+      const overrideRetry = 1
+      const overrideRetryInterval = 1000
+      const interval = 100
+      let before = Date.now()
+      const func1 = jest.fn(() => { // 二度目で成功
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(retryInterval)
+        expect(now - before).toBeLessThan(retryInterval * 2) // retryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        return true
+      }).mockImplementationOnce(() => {
+        const now = Date.now()
+        expect(now - before).toBeLessThan(interval) // 初回のintervalはなし
+        before = now
+        return false
+      })
+
+      const func2 = jest.fn(() => { // 常に失敗
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(overrideRetryInterval)
+        expect(now - before).toBeLessThan(overrideRetryInterval * 2) // overrideRetryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        return false
+      }).mockImplementationOnce(() => {
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(interval)
+        expect(now - before).toBeLessThan(retryInterval) // 新しいqueueが実行される場合はinterval分まつ
+        before = now
+        return false
+      })
+
+      const func3 = jest.fn() // 実行されない
+
+      const tqueue = new TimerQueue({retry, retryInterval, interval})
+      tqueue.push(func1)
+      tqueue.push(func2, {retry: overrideRetry, retryInterval: overrideRetryInterval})
+      tqueue.push(func3)
+      tqueue.once('error', () => {
+        expect(func1).toHaveBeenCalledTimes(2)
+        expect(func2).toHaveBeenCalledTimes(2) // 1度しかリトライしないので計2回
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが非同期実装(引数あり)で、errorを実行した場合', function (done) {
+      const retry = 3
+      const retryInterval = 500
+      const overrideRetry = 1
+      const overrideRetryInterval = 1000
+      const interval = 100
+      let before = Date.now()
+
+      const func1 = jest.fn((done) => { // 二度目で成功
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(retryInterval)
+        expect(now - before).toBeLessThan(retryInterval * 2) // retryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        done()
+      }).mockImplementationOnce((done, error) => {
+        const now = Date.now()
+        expect(now - before).toBeLessThan(interval) // 初回のintervalはなし
+        before = now
+        error('call reject')
+      })
+
+      const func2 = jest.fn((done, error) => { // 常に失敗
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(retryInterval)
+        expect(now - before).toBeLessThan(retryInterval * 2) // retryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        error('call reject')
+      }).mockImplementationOnce((done, error) => {
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(overrideRetryInterval)
+        expect(now - before).toBeLessThan(overrideRetryInterval * 2) // overrideRetryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        error('call reject')
+      })
+
+      const func3 = jest.fn() // 実行されない
+
+      const tqueue = new TimerQueue({retry, retryInterval, interval})
+      tqueue.push(func1)
+      tqueue.push(func2, {retry: overrideRetry, retryInterval: overrideRetryInterval})
+      tqueue.push(func3)
+      tqueue.once('error', () => {
+        expect(func1).toHaveBeenCalledTimes(2)
+        expect(func2).toHaveBeenCalledTimes(2) // 1度しかリトライしないので計2回
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
+      const retry = 3
+      const retryInterval = 500
+      const overrideRetry = 1
+      const overrideRetryInterval = 1000
+      const interval = 100
+      let before = Date.now()
+      const func1 = jest.fn().mockImplementationOnce(() => {
+        const now = Date.now()
+        expect(now - before).toBeLessThan(interval) // 初回のintervalはなし
+        before = now
+        return Promise.reject(new Error('error'))
+      }).mockImplementation(() => {
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(retryInterval)
+        expect(now - before).toBeLessThan(retryInterval * 2) // retryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        return Promise.resolve()
+      }) // 二度目で成功
+
+      const func2 = jest.fn().mockImplementationOnce(() => {
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(interval)
+        expect(now - before).toBeLessThan(retryInterval) // 新しいqueueが実行される場合はinterval分まつ
+        before = now
+        return Promise.reject(new Error('error'))
+      }).mockImplementation(() => {
+        const now = Date.now()
+        expect(now - before).toBeGreaterThanOrEqual(overrideRetryInterval)
+        expect(now - before).toBeLessThan(overrideRetryInterval * 2) // overrideRetryIntervalに指定した時間の2倍はかからないはず
+        before = now
+        return Promise.reject(new Error('error'))
+      }) // 常に失敗
+
+      const func3 = jest.fn() // 実行されない
+
+      const tqueue = new TimerQueue({retry, retryInterval, interval})
+      tqueue.push(func1)
+      tqueue.push(func2, {retry: overrideRetry, retryInterval: overrideRetryInterval})
+      tqueue.push(func3)
+      tqueue.once('error', () => {
+        expect(func1).toHaveBeenCalledTimes(2)
+        expect(func2).toHaveBeenCalledTimes(2) // 1度しかリトライしないので計2回
         expect(func3).not.toHaveBeenCalled()
         done()
       })

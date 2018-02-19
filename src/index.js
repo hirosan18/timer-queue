@@ -34,14 +34,16 @@ class TimerQueue extends EventEmitter {
     this.autoStart = options.autoStart
   }
 
-  push (fn, delay = 0) {
+  push (fn, params = 0) {
     if (typeof fn !== 'function') {
       throw new TypeError('first argument must be a function')
     }
-    this.queue.push({
-      fn,
-      delay
-    })
+    if (typeof params === 'number') {
+      params = { delay: params }
+    }
+    this.queue.push(Object.assign({}, params, {
+      fn
+    }))
     if (this.autoStart) {
       this.start()
     }
@@ -56,12 +58,15 @@ class TimerQueue extends EventEmitter {
       this[_end]()
       return
     }
+
     this[_isRunning] = true
     this[_isError] = false
 
     const {
       fn,
       delay = 0,
+      retry = this.retry,
+      retryInterval = this.retryInterval,
       retryCount = 0
     } = this.queue.shift()
 
@@ -86,13 +91,15 @@ class TimerQueue extends EventEmitter {
         promises.push(sleep(this.timeout))
       }
       Promise.race(promises).catch((e) => {
-        if (retryCount < this.retry) {
+        if (retryCount < retry) {
           this.queue.unshift({
             fn,
             delay,
+            retry,
+            retryInterval,
             retryCount: retryCount + 1
           })
-          return Promise.resolve(this.retryInterval)
+          return Promise.resolve(retryInterval)
         } else {
           return Promise.reject(e)
         }
@@ -118,7 +125,7 @@ class TimerQueue extends EventEmitter {
         this[_isRunning] = false
         this.start()
       })
-    } else if (!this[_isError]) {
+    } else {
       this[_end]()
     }
   }
