@@ -52,14 +52,18 @@ class TimerQueue extends EventEmitter {
     if (this[_isRunning]) {
       return
     }
+    if (this.queue.length <= 0) {
+      this[_end]()
+      return
+    }
     this[_isRunning] = true
     this[_isError] = false
 
     const {
-      fn = () => {},
+      fn,
       delay = 0,
       retryCount = 0
-    } = this.queue.shift() || {}
+    } = this.queue.shift()
 
     return sleep(delay).then(() => {
       const promises = []
@@ -90,9 +94,13 @@ class TimerQueue extends EventEmitter {
           })
           return Promise.resolve(this.retryInterval)
         } else {
-          this[_error](e)
+          return Promise.reject(e)
         }
-      }).then((interval) => this[_next](interval))
+      }).then((interval) => {
+        this[_next](interval)
+      }).catch((e) => {
+        this[_error](e)
+      })
     })
   }
   stop () {
