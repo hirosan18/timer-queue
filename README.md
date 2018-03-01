@@ -56,7 +56,7 @@ enqueue the function.
 - options.delay `number` - delay time (ms) for execution. `defalut: 0`
 - options.retry `number` - retry count when execution function failed. `default: 0`
 - options.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
-- options.error `function` - error callback. `default: 0`
+- options.error `function` - error callback.
 
 ## Example
 
