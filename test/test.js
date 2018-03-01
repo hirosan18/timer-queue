@@ -528,68 +528,46 @@ describe('TimerQueue', function () {
       tqueue.start()
     })
     it('.push()の第一引数のfunctionが非同期実装(引数あり)だった場合', function (done) {
-      expect.assertions(5)
-      let count = 0
+      const retry = 2
       const timeout = 100
       const now = Date.now()
+      const func = jest.fn()
       const func1 = done => {
+        func()
         sleep(timeout * 2).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 2) // タイムアウト関係なしに実行
           done()
         })
       }
-      const func2 = done => {
-        expect(Date.now() - now).toBeLessThan(timeout * 2) // 前Queueがタイムアウトされて実行
-        sleep(timeout * 2).then(() => {
-          expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 3)
-          done()
-        })
-      }
-      const func3 = done => {
-        expect(Date.now() - now).toBeLessThan(timeout * 3) // 前Queueがタイムアウトされて実行
-        sleep(timeout * 2).then(() => {
-          count++ // 実行されない
-          done()
-        })
-      }
-      const tqueue = new TimerQueue({timeout})
+      const func2 = jest.fn()
+      const tqueue = new TimerQueue({timeout, retry})
       tqueue.push(func1)
       tqueue.push(func2)
-      tqueue.push(func3)
-      tqueue.once('end', () => {
-        expect(count).toBe(0)
+      tqueue.once('error', () => {
+        expect(func).toHaveBeenCalledTimes(retry + 1)
+        expect(func2).not.toHaveBeenCalled()
         done()
       })
       tqueue.start()
     })
     it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)だった場合', function (done) {
-      expect.assertions(5)
-      let count = 0
+      const retry = 2
       const timeout = 100
       const now = Date.now()
+      const func = jest.fn()
       const func1 = () => {
+        func()
         return sleep(timeout * 2).then(() => {
           expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 2) // タイムアウト関係なしに実行
         })
       }
-      const func2 = () => {
-        expect(Date.now() - now).toBeLessThan(timeout * 2) // 前Queueがタイムアウトされて実行
-        return sleep(timeout * 2).then(() => {
-          expect(Date.now() - now).toBeGreaterThanOrEqual(timeout * 3)
-        })
-      }
-      const func3 = () => {
-        expect(Date.now() - now).toBeLessThan(timeout * 3) // 前Queueがタイムアウトされて実行
-        return sleep(timeout * 2).then(() => {
-          count++ // 実行されない
-        })
-      }
-      const tqueue = new TimerQueue({timeout})
+      const func2 = jest.fn()
+      const tqueue = new TimerQueue({timeout, retry})
       tqueue.push(func1)
       tqueue.push(func2)
-      tqueue.push(func3)
-      tqueue.once('end', () => {
-        expect(count).toBe(0)
+      tqueue.once('error', () => {
+        expect(func).toHaveBeenCalledTimes(retry + 1)
+        expect(func2).not.toHaveBeenCalled()
         done()
       })
       tqueue.start()
@@ -642,6 +620,23 @@ describe('TimerQueue', function () {
         expect(func3).not.toHaveBeenCalled()
         done()
       })
+      tqueue.start()
+    })
+    it('errorを傍受しない場合', function (done) {
+      const func1 = jest.fn(() => Promise.reject(new Error('error')))
+      const func2 = jest.fn() // 実行されない
+      const func3 = jest.fn() // 実行されない
+      const tqueue = new TimerQueue()
+      tqueue.push(func1)
+      tqueue.push(func2)
+      tqueue.push(func3)
+      setTimeout(() => {
+        expect(tqueue.isFailed).toBe(true)
+        expect(func1).toHaveBeenCalled()
+        expect(func2).not.toHaveBeenCalled()
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      }, 300)
       tqueue.start()
     })
   })

@@ -88,7 +88,9 @@ class TimerQueue extends EventEmitter {
         }
       }
       if (this.timeout > 0) {
-        promises.push(sleep(this.timeout))
+        promises.push(sleep(this.timeout).then(() => {
+          return Promise.reject(new Error('timeout'))
+        }))
       }
       Promise.race(promises).catch((e) => {
         if (retryCount < retry) {
@@ -118,6 +120,9 @@ class TimerQueue extends EventEmitter {
   }
   get isRunning () {
     return this[_isRunning]
+  }
+  get isFailed () {
+    return this[_isError]
   }
   [_next] (interval = this.interval) {
     if (this[_isRunning] && this.queue.length) {
