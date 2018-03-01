@@ -58,6 +58,5 @@ typings/
 .env
 
 .DS_Store
-coverage/
 lib/
 
