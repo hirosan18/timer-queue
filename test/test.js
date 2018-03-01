@@ -692,6 +692,25 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
+    it('.push()の第二引数のerrorコールバックを設定して、rejectした場合', function (done) {
+      const retry = 3
+      const error = jest.fn()
+      const func1 = jest.fn(() => Promise.reject(new Error('error')))
+      const func2 = jest.fn() // 実行されない
+      const func3 = jest.fn() // 実行されない
+      const tqueue = new TimerQueue()
+      tqueue.push(func1, {retry, error: error})
+      tqueue.push(func2)
+      tqueue.push(func3)
+      tqueue.once('error', () => {
+        expect(error).toHaveBeenCalledTimes(1)
+        expect(func1).toHaveBeenCalledTimes(4)
+        expect(func2).not.toHaveBeenCalled()
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
   })
   describe('retry/retryIntervalを指定して失敗した場合の挙動', function () {
     it('.push()の第一引数のfunctionが同期実装(引数なしorPromiseを返却しない)で、falseを返却した場合', function (done) {

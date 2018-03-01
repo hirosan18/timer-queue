@@ -67,7 +67,8 @@ class TimerQueue extends EventEmitter {
       delay = 0,
       retry = this.retry,
       retryInterval = this.retryInterval,
-      retryCount = 0
+      retryCount = 0,
+      error = () => {}
     } = this.queue.shift()
 
     return sleep(delay).then(() => {
@@ -99,7 +100,8 @@ class TimerQueue extends EventEmitter {
             delay,
             retry,
             retryInterval,
-            retryCount: retryCount + 1
+            retryCount: retryCount + 1,
+            error
           })
           return Promise.resolve(retryInterval)
         } else {
@@ -108,6 +110,7 @@ class TimerQueue extends EventEmitter {
       }).then((interval) => {
         this[_next](interval)
       }).catch((e) => {
+        error.call(this, e)
         this[_error](e)
       })
     })
@@ -137,12 +140,16 @@ class TimerQueue extends EventEmitter {
   [_end] () {
     this[_isRunning] = false
     this[_isError] = false
-    this.emit('end')
+    if (this.listenerCount('end') > 0) {
+      this.emit('end')
+    }
   }
   [_error] (err) {
     this[_isRunning] = false
     this[_isError] = true
-    this.emit('error', err)
+    if (this.listenerCount('error') > 0) {
+      this.emit('error', err)
+    }
   }
 }
 
