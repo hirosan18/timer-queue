@@ -105,7 +105,7 @@ class TimerQueue extends EventEmitter {
           })
           return Promise.resolve(retryInterval)
         } else {
-          return Promise.reject(e)
+          return Promise.reject(e || new Error('error'))
         }
       }).then((interval) => {
         this[_next](interval)
