@@ -607,14 +607,32 @@ describe('TimerQueue', function () {
       tqueue.start()
     })
     it('.push()の第一引数のfunctionが非同期実装(Promiseを返却)で、rejectした場合', function (done) {
-      const func1 = jest.fn(() => Promise.reject(new Error('error')))
+      const func1 = jest.fn(() => Promise.reject(new Error('reject error')))
       const func2 = jest.fn() // 実行されない
       const func3 = jest.fn() // 実行されない
       const tqueue = new TimerQueue()
       tqueue.push(func1)
       tqueue.push(func2)
       tqueue.push(func3)
-      tqueue.once('error', () => {
+      tqueue.once('error', (e) => {
+        expect(e.message).toBe('reject error')
+        expect(func1).toHaveBeenCalled()
+        expect(func2).not.toHaveBeenCalled()
+        expect(func3).not.toHaveBeenCalled()
+        done()
+      })
+      tqueue.start()
+    })
+    it('.push()の第一引数のfunctionが非同期実装(Promiseを返却かつエラーなし)で、rejectした場合', function (done) {
+      const func1 = jest.fn(() => Promise.reject())
+      const func2 = jest.fn() // 実行されない
+      const func3 = jest.fn() // 実行されない
+      const tqueue = new TimerQueue()
+      tqueue.push(func1)
+      tqueue.push(func2)
+      tqueue.push(func3)
+      tqueue.once('error', (e) => {
+        expect(e.message).toBe('error')
         expect(func1).toHaveBeenCalled()
         expect(func2).not.toHaveBeenCalled()
         expect(func3).not.toHaveBeenCalled()
