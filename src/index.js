@@ -6,7 +6,8 @@ const defaultParams = {
   interval: 0,
   retry: 0,
   retryInterval: 0,
-  autoStart: false
+  autoStart: false,
+  startImmediately: false
 }
 const _next = Symbol('_next')
 const _end = Symbol('_end')
@@ -63,7 +64,9 @@ class TimerQueue extends EventEmitter {
     this[_isRunning] = true
     this[_isError] = false
 
-    const runImmediately = this.startImmediately && this.queue.length === 1 && isStartingWithEmptyQueue
+    const runImmediately = this.startImmediately &&
+      ((this.queue.length === 1 && isStartingWithEmptyQueue) ||
+      (!this.autoStart && isStartingWithEmptyQueue))
 
     const {
       fn,
@@ -75,7 +78,6 @@ class TimerQueue extends EventEmitter {
     } = this.queue.shift()
 
     const delayToUse = runImmediately ? 0 : delay
-
     return sleep(delayToUse).then(() => {
       const promises = []
       const sync = fn && fn.length
