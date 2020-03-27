@@ -25,7 +25,7 @@ Constructor
 - options.retry `number` - retry count when execution function failed. `default: 0`
 - options.retryInterval `number` - interval time (ms) for retry execution. `default: 0`
 - options.autostart `boolean` - auto start when enqueue by `tqueue.push()`. `default: false`
-- options.startImmediately `boolean` - run immediately when queue is empty `tqueue.push()`. `default: false`
+- options.startImmediately `boolean` - run immediately when queue is empty and enqueuing by `tqueue.push()`. `default: false`
 
 #### tqueue.start()
 
