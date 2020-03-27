@@ -65,8 +65,10 @@ class TimerQueue extends EventEmitter {
     this[_isError] = false
 
     const runImmediately = this.startImmediately &&
-      ((this.queue.length === 1 && isStartingWithEmptyQueue) ||
-      (!this.autoStart && isStartingWithEmptyQueue))
+      (
+        (this.autoStart && this.queue.length === 1 && isStartingWithEmptyQueue) ||
+        (!this.autoStart && isStartingWithEmptyQueue)
+      )
 
     const {
       fn,
