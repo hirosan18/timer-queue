@@ -124,18 +124,23 @@ class TimerQueue extends EventEmitter {
       })
     })
   }
+
   stop () {
     this[_isRunning] = false
   }
+
   clear () {
     this.queue.length = 0
   }
+
   get isRunning () {
     return this[_isRunning]
   }
+
   get isFailed () {
     return this[_isError]
   }
+
   [_next] (interval = this.interval) {
     if (this[_isRunning] && this.queue.length) {
       sleep(interval).then(() => {
@@ -146,6 +151,7 @@ class TimerQueue extends EventEmitter {
       this[_end]()
     }
   }
+
   [_end] () {
     this[_isRunning] = false
     this[_isError] = false
@@ -153,6 +159,7 @@ class TimerQueue extends EventEmitter {
       this.emit('end')
     }
   }
+
   [_error] (err) {
     this[_isRunning] = false
     this[_isError] = true
