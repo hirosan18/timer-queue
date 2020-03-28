@@ -348,6 +348,49 @@ describe('TimerQueue', function () {
       })
       tqueue.start()
     })
+    it('次の場合、最初のメソッドをすぐに呼び出します startImmediately=true autoStart=true', function (done) {
+      const timeout = 50
+      const startImmediately = true
+      const autoStart = true
+      const tqueue = new TimerQueue({startImmediately, autoStart})
+      const now = Date.now()
+      const func = jest.fn().mockImplementationOnce(() => {
+        expect(Date.now() - now).toBeLessThan(timeout)
+      }).mockImplementationOnce(() => {
+        expect(Date.now() - now).toBeGreaterThan(timeout)
+      })
+      tqueue.push(func, timeout)
+      tqueue.push(func, timeout)
+      sleep(timeout * .5).then(() => {
+        expect(func).toHaveBeenCalledTimes(1)
+        sleep(timeout * 1.5).then(() => {
+          expect(func).toHaveBeenCalledTimes(2)
+          done()
+        })
+      })
+    });
+    it('次の場合、最初のメソッドをすぐに呼び出します startImmediately=true autoStart=false', function (done) {
+      const timeout = 50
+      const startImmediately = true
+      const autoStart = false
+      const tqueue = new TimerQueue({startImmediately, autoStart})
+      const now = Date.now()
+      const func = jest.fn().mockImplementationOnce(() => {
+        expect(Date.now() - now).toBeLessThan(timeout)
+      }).mockImplementationOnce(() => {
+        expect(Date.now() - now).toBeGreaterThan(timeout)
+      })
+      tqueue.push(func, timeout)
+      tqueue.push(func, timeout);
+      tqueue.start();
+      sleep(timeout * .5).then(() => {
+        expect(func).toHaveBeenCalledTimes(1)
+        sleep(timeout * 1.5).then(() => {
+          expect(func).toHaveBeenCalledTimes(2)
+          done()
+        })
+      })
+    });
   })
   describe('.stop()', function () {
     it('Queueが空の場合', function (done) {
